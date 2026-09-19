@@ -1,3 +1,4 @@
-**/__pychache__
-./.backend-old
-./backend/db.sqlite3
+/cli/target/
+/backend/db.sqlite3
+**/__pycache__/
+.backend-old
