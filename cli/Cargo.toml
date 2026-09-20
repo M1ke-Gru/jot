@@ -9,7 +9,8 @@ chrono = "0.4.45"
 clap = { version = "4.6.6", features = ["derive"] }
 dialoguer = { version = "0.12.0", features = ["password"] }
 json = "0.12.4"
-keyring = "4.2.0"
+keyring = { version = "4.2.0", default-features = false, features = ["cli"] }
+keyring-core = "1"
 reqwest = { version = "0.13.5", features = ["json", "cookies"] }
 serde = { version = "1.0.229", features = ["derive"] }
 tokio = { version = "1.53.1", features = ["full"] }

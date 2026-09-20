@@ -1,4 +1,4 @@
-use std::io;
+use std::io::{self, Write};
 
 use chrono::Utc;
 use reqwest::Client;
@@ -48,7 +48,15 @@ impl<'a> TaskState<'a> {
                 },
             )
             .await?;
-            println!("Done: {}", task.title);
+            println!(
+                "{}: {}",
+                if !task.status {
+                    "Done"
+                } else {
+                    "Marked not done"
+                },
+                task.title
+            );
         }
         Ok(())
     }
@@ -63,31 +71,40 @@ impl<'a> TaskState<'a> {
     }
 
     async fn find_task_by_name(&self, name: String) -> Result<Option<TaskFull>, ReqError> {
+        let normalized_name = name.to_lowercase();
         let tasks = tasks_router::list_tasks(self.client).await?;
         let mut filtered_tasks: Vec<TaskFull> = tasks
             .into_iter()
-            .filter(|t| t.title.contains(name.as_str()))
+            .filter(|t| t.title.to_lowercase().contains(normalized_name.as_str()))
             .collect::<Vec<TaskFull>>();
 
-        if filtered_tasks.len() == 1 {
-            return Ok(filtered_tasks.pop());
-        }
-
-        for (choice, task) in filtered_tasks.iter().enumerate() {
-            println!("{}. {}", choice + 1, task.title);
-        }
-
-        let mut input = String::new();
-        io::stdin()
-            .read_line(&mut input)
-            .expect("Failed to read line");
-        match input.trim().parse::<usize>() {
-            Ok(choice) if choice >= 1 && choice <= filtered_tasks.len() => {
-                Ok(Some(filtered_tasks.remove(choice - 1)))
-            }
-            _ => {
-                println!("Provide a valid integer.");
+        match filtered_tasks.len() {
+            0 => {
+                println!("No tasks with similar names. Nothing marked done.");
                 Ok(None)
+            }
+            1 => Ok(filtered_tasks.pop()),
+            _ => {
+                println!("Found multiple tasks with similar names:");
+                for (choice, task) in filtered_tasks.iter().enumerate() {
+                    println!("{}. {}", choice + 1, task.title);
+                }
+                print!("Enter the number of the task you want to select: ");
+                io::stdout().flush().expect("Failed to flush stdout");
+
+                let mut input = String::new();
+                io::stdin()
+                    .read_line(&mut input)
+                    .expect("Failed to read line");
+                match input.trim().parse::<usize>() {
+                    Ok(choice) if choice >= 1 && choice <= filtered_tasks.len() => {
+                        Ok(Some(filtered_tasks.remove(choice - 1)))
+                    }
+                    _ => {
+                        println!("Provide a valid integer.");
+                        Ok(None)
+                    }
+                }
             }
         }
     }

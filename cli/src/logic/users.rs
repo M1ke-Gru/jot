@@ -1,11 +1,8 @@
 use anyhow::{Context, Result};
 use dialoguer::{Input, Password};
-use keyring::Entry;
 use reqwest::{Client, Response, header::SET_COOKIE};
 
 use crate::{auth, http::users as user_api};
-
-const KEYRING_SERVICE: &str = "jot";
 
 pub struct UserState<'a> {
     client: &'a Client,
@@ -25,8 +22,10 @@ impl<'a> UserState<'a> {
             .await?
             .error_for_status()?;
 
-        save_cookie("sessionid", extract_cookie(&response, "sessionid")?)?;
-        save_cookie("csrftoken", extract_cookie(&response, "csrftoken")?)?;
+        auth::store_auth_creds(
+            extract_cookie(&response, "sessionid")?.as_str(),
+            extract_cookie(&response, "csrftoken")?.as_str(),
+        )?;
 
         println!("Logged in.");
         Ok(())
@@ -82,9 +81,4 @@ fn extract_cookie(response: &Response, name: &str) -> Result<String> {
         .map(|header| header.split(';').next().unwrap_or_default())
         .find_map(|cookie| cookie.strip_prefix(&prefix).map(str::to_owned))
         .with_context(|| format!("Login response did not contain a {name} cookie"))
-}
-
-fn save_cookie(name: &str, value: String) -> Result<()> {
-    Entry::new(KEYRING_SERVICE, name)?.set_password(&value)?;
-    Ok(())
 }

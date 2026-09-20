@@ -1,13 +1,19 @@
 use anyhow::Result;
-use keyring::Entry;
+use keyring_core::Entry;
 use reqwest::{
+    header::{HeaderMap, HeaderName, HeaderValue, COOKIE},
     Client,
-    header::{COOKIE, HeaderMap, HeaderName, HeaderValue},
 };
 
 const KEYRING_SERVICE: &str = "jot";
 const SESSION_COOKIE: &str = "sessionid";
 const CSRF_COOKIE: &str = "csrftoken";
+
+pub fn store_auth_creds(sessionid: &str, csrftoken: &str) -> Result<()> {
+    Entry::new(KEYRING_SERVICE, SESSION_COOKIE)?.set_password(sessionid)?;
+    Entry::new(KEYRING_SERVICE, CSRF_COOKIE)?.set_password(csrftoken)?;
+    Ok(())
+}
 
 pub fn authenticated_client() -> Result<Client> {
     let sessionid = Entry::new(KEYRING_SERVICE, SESSION_COOKIE)?.get_password()?;

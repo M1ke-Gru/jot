@@ -33,6 +33,7 @@ enum Command {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
+    keyring::cli::use_native_store(false)?;
 
     match cli.cmd {
         Command::Login => {
