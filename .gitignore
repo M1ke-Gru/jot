@@ -1,5 +1,5 @@
 /cli/target/
 /cli/jot
 /backend/db.sqlite3
-**/__pycache__/
-.backend-old
+/**/__pycache__/
+/.backend-old
